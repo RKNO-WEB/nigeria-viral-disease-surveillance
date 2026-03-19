@@ -10,73 +10,39 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
-export type AlertLevel = { 'warning' : null } |
-  { 'emergency' : null } |
-  { 'watch' : null };
-export interface AnalyticsSummary {
-  'weeklyCounts' : Array<[string, bigint]>,
-  'casesByDisease' : Array<[Disease, bigint]>,
-  'casesByOutcome' : Array<[ClinicalOutcome, bigint]>,
-  'casesByAgeGroup' : Array<[string, bigint]>,
-  'casesBySex' : Array<[string, bigint]>,
-  'casesByState' : Array<[string, bigint]>,
-}
-export type CaseClassification = { 'probable' : null } |
-  { 'suspected' : null } |
-  { 'confirmed' : null };
-export interface CaseReport {
-  'id' : bigint,
-  'status' : CaseStatus,
-  'exposureHistory' : string,
-  'symptomsDate' : string,
-  'timestamp' : Time,
-  'disease' : Disease,
-  'labResult' : [] | [LabResult],
-  'outcome' : ClinicalOutcome,
-  'reporter' : Principal,
-  'demographics' : PatientDemographics,
-  'classification' : CaseClassification,
-}
-export type CaseStatus = { 'pending' : null } |
-  { 'approved' : null } |
+export type ArticleStatus = { 'underReview' : null } |
+  { 'published' : null } |
   { 'rejected' : null };
-export type ClinicalOutcome = { 'alive' : null } |
-  { 'dead' : null } |
-  { 'unknown' : null };
-export type Disease = { 'yellowFever' : null } |
-  { 'mpox' : null } |
-  { 'meningitis' : null } |
-  { 'marburg' : null } |
-  { 'ebola' : null } |
-  { 'covid19' : null } |
-  { 'lassaFever' : null } |
-  { 'cholera' : null };
-export interface LabResult {
-  'result' : TestResult,
-  'testType' : TestType,
-  'collectionDate' : string,
-  'labName' : string,
+export type ExternalBlob = Uint8Array;
+export interface JournalArticle {
+  'id' : bigint,
+  'pdf' : ExternalBlob,
+  'status' : ArticleStatus,
+  'title' : string,
+  'featured' : boolean,
+  'authors' : Array<string>,
+  'publicationDate' : [] | [Time],
+  'journalName' : string,
+  'abstract' : string,
+  'category' : string,
 }
-export interface OutbreakAlert {
-  'caseCount' : bigint,
-  'alertLevel' : AlertLevel,
-  'state' : string,
-  'disease' : Disease,
-  'weekStart' : Time,
+export interface ManuscriptSubmission {
+  'id' : bigint,
+  'status' : ArticleStatus,
+  'title' : string,
+  'authors' : Array<string>,
+  'contactEmail' : string,
+  'abstract' : string,
+  'category' : string,
+  'manuscriptFile' : ExternalBlob,
 }
-export interface PatientDemographics {
-  'age' : bigint,
-  'lga' : string,
-  'sex' : string,
-  'state' : string,
+export interface ReviewerApplication {
+  'institution' : string,
+  'name' : string,
+  'qualifications' : string,
+  'email' : string,
+  'expertise' : Array<string>,
 }
-export type TestResult = { 'indeterminate' : null } |
-  { 'negative' : null } |
-  { 'positive' : null };
-export type TestType = { 'pcr' : null } |
-  { 'rdt' : null } |
-  { 'culture' : null } |
-  { 'elisa' : null };
 export type Time = bigint;
 export interface UserProfile {
   'name' : string,
@@ -86,47 +52,58 @@ export interface UserProfile {
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
+export interface _CaffeineStorageCreateCertificateResult {
+  'method' : string,
+  'blob_hash' : string,
+}
+export interface _CaffeineStorageRefillInformation {
+  'proposed_top_up_amount' : [] | [bigint],
+}
+export interface _CaffeineStorageRefillResult {
+  'success' : [] | [boolean],
+  'topped_up_amount' : [] | [bigint],
+}
 export interface _SERVICE {
-  '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
-  'approveReport' : ActorMethod<[bigint], undefined>,
-  'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
-  'attachLabResult' : ActorMethod<[bigint, LabResult], undefined>,
-  'getAnalyticsSummary' : ActorMethod<[], AnalyticsSummary>,
-  'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
-  'getCallerUserRole' : ActorMethod<[], UserRole>,
-  'getCaseById' : ActorMethod<[bigint], CaseReport>,
-  'getCaseReports' : ActorMethod<
-    [[] | [Disease], [] | [string]],
-    Array<CaseReport>
-  >,
-  'getOutbreakAlerts' : ActorMethod<[], Array<OutbreakAlert>>,
-  'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
-  'isCallerAdmin' : ActorMethod<[], boolean>,
-  'rejectReport' : ActorMethod<[bigint], undefined>,
-  'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
-  'submitCaseReport' : ActorMethod<
-    [
-      PatientDemographics,
-      Disease,
-      CaseClassification,
-      string,
-      string,
-      ClinicalOutcome,
-    ],
-    bigint
-  >,
-  'updateCaseReport' : ActorMethod<
-    [
-      bigint,
-      PatientDemographics,
-      Disease,
-      CaseClassification,
-      string,
-      string,
-      ClinicalOutcome,
-    ],
+  '_caffeineStorageBlobIsLive' : ActorMethod<[Uint8Array], boolean>,
+  '_caffeineStorageBlobsToDelete' : ActorMethod<[], Array<Uint8Array>>,
+  '_caffeineStorageConfirmBlobDeletion' : ActorMethod<
+    [Array<Uint8Array>],
     undefined
   >,
+  '_caffeineStorageCreateCertificate' : ActorMethod<
+    [string],
+    _CaffeineStorageCreateCertificateResult
+  >,
+  '_caffeineStorageRefillCashier' : ActorMethod<
+    [[] | [_CaffeineStorageRefillInformation]],
+    _CaffeineStorageRefillResult
+  >,
+  '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
+  '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'getArticleById' : ActorMethod<[bigint], [] | [JournalArticle]>,
+  'getArticles' : ActorMethod<[], Array<JournalArticle>>,
+  'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
+  'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getFeaturedArticles' : ActorMethod<[], Array<JournalArticle>>,
+  'getLatestArticles' : ActorMethod<[bigint], Array<JournalArticle>>,
+  'getPaperStatus' : ActorMethod<[bigint], [] | [ArticleStatus]>,
+  'getReviewerApplications' : ActorMethod<[], Array<ReviewerApplication>>,
+  'getSubmissions' : ActorMethod<[], Array<ManuscriptSubmission>>,
+  'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'isCallerAdmin' : ActorMethod<[], boolean>,
+  'publishArticle' : ActorMethod<[bigint, string, Time, boolean], bigint>,
+  'registerReviewer' : ActorMethod<
+    [string, string, string, string, Array<string>],
+    undefined
+  >,
+  'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'setFeatured' : ActorMethod<[bigint, boolean], undefined>,
+  'submitManuscript' : ActorMethod<
+    [string, string, Array<string>, string, string, ExternalBlob],
+    bigint
+  >,
+  'updatePaperStatus' : ActorMethod<[bigint, ArticleStatus], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

@@ -8,293 +8,278 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const _CaffeineStorageCreateCertificateResult = IDL.Record({
+  'method' : IDL.Text,
+  'blob_hash' : IDL.Text,
+});
+export const _CaffeineStorageRefillInformation = IDL.Record({
+  'proposed_top_up_amount' : IDL.Opt(IDL.Nat),
+});
+export const _CaffeineStorageRefillResult = IDL.Record({
+  'success' : IDL.Opt(IDL.Bool),
+  'topped_up_amount' : IDL.Opt(IDL.Nat),
+});
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
-export const TestResult = IDL.Variant({
-  'indeterminate' : IDL.Null,
-  'negative' : IDL.Null,
-  'positive' : IDL.Null,
+export const ExternalBlob = IDL.Vec(IDL.Nat8);
+export const ArticleStatus = IDL.Variant({
+  'underReview' : IDL.Null,
+  'published' : IDL.Null,
+  'rejected' : IDL.Null,
 });
-export const TestType = IDL.Variant({
-  'pcr' : IDL.Null,
-  'rdt' : IDL.Null,
-  'culture' : IDL.Null,
-  'elisa' : IDL.Null,
-});
-export const LabResult = IDL.Record({
-  'result' : TestResult,
-  'testType' : TestType,
-  'collectionDate' : IDL.Text,
-  'labName' : IDL.Text,
-});
-export const Disease = IDL.Variant({
-  'yellowFever' : IDL.Null,
-  'mpox' : IDL.Null,
-  'meningitis' : IDL.Null,
-  'marburg' : IDL.Null,
-  'ebola' : IDL.Null,
-  'covid19' : IDL.Null,
-  'lassaFever' : IDL.Null,
-  'cholera' : IDL.Null,
-});
-export const ClinicalOutcome = IDL.Variant({
-  'alive' : IDL.Null,
-  'dead' : IDL.Null,
-  'unknown' : IDL.Null,
-});
-export const AnalyticsSummary = IDL.Record({
-  'weeklyCounts' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat)),
-  'casesByDisease' : IDL.Vec(IDL.Tuple(Disease, IDL.Nat)),
-  'casesByOutcome' : IDL.Vec(IDL.Tuple(ClinicalOutcome, IDL.Nat)),
-  'casesByAgeGroup' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat)),
-  'casesBySex' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat)),
-  'casesByState' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat)),
+export const Time = IDL.Int;
+export const JournalArticle = IDL.Record({
+  'id' : IDL.Nat,
+  'pdf' : ExternalBlob,
+  'status' : ArticleStatus,
+  'title' : IDL.Text,
+  'featured' : IDL.Bool,
+  'authors' : IDL.Vec(IDL.Text),
+  'publicationDate' : IDL.Opt(Time),
+  'journalName' : IDL.Text,
+  'abstract' : IDL.Text,
+  'category' : IDL.Text,
 });
 export const UserProfile = IDL.Record({
   'name' : IDL.Text,
   'role' : IDL.Text,
   'organization' : IDL.Text,
 });
-export const CaseStatus = IDL.Variant({
-  'pending' : IDL.Null,
-  'approved' : IDL.Null,
-  'rejected' : IDL.Null,
+export const ReviewerApplication = IDL.Record({
+  'institution' : IDL.Text,
+  'name' : IDL.Text,
+  'qualifications' : IDL.Text,
+  'email' : IDL.Text,
+  'expertise' : IDL.Vec(IDL.Text),
 });
-export const Time = IDL.Int;
-export const PatientDemographics = IDL.Record({
-  'age' : IDL.Nat,
-  'lga' : IDL.Text,
-  'sex' : IDL.Text,
-  'state' : IDL.Text,
-});
-export const CaseClassification = IDL.Variant({
-  'probable' : IDL.Null,
-  'suspected' : IDL.Null,
-  'confirmed' : IDL.Null,
-});
-export const CaseReport = IDL.Record({
+export const ManuscriptSubmission = IDL.Record({
   'id' : IDL.Nat,
-  'status' : CaseStatus,
-  'exposureHistory' : IDL.Text,
-  'symptomsDate' : IDL.Text,
-  'timestamp' : Time,
-  'disease' : Disease,
-  'labResult' : IDL.Opt(LabResult),
-  'outcome' : ClinicalOutcome,
-  'reporter' : IDL.Principal,
-  'demographics' : PatientDemographics,
-  'classification' : CaseClassification,
-});
-export const AlertLevel = IDL.Variant({
-  'warning' : IDL.Null,
-  'emergency' : IDL.Null,
-  'watch' : IDL.Null,
-});
-export const OutbreakAlert = IDL.Record({
-  'caseCount' : IDL.Nat,
-  'alertLevel' : AlertLevel,
-  'state' : IDL.Text,
-  'disease' : Disease,
-  'weekStart' : Time,
+  'status' : ArticleStatus,
+  'title' : IDL.Text,
+  'authors' : IDL.Vec(IDL.Text),
+  'contactEmail' : IDL.Text,
+  'abstract' : IDL.Text,
+  'category' : IDL.Text,
+  'manuscriptFile' : ExternalBlob,
 });
 
 export const idlService = IDL.Service({
-  '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-  'approveReport' : IDL.Func([IDL.Nat], [], []),
-  'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-  'attachLabResult' : IDL.Func([IDL.Nat, LabResult], [], []),
-  'getAnalyticsSummary' : IDL.Func([], [AnalyticsSummary], ['query']),
-  'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
-  'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
-  'getCaseById' : IDL.Func([IDL.Nat], [CaseReport], ['query']),
-  'getCaseReports' : IDL.Func(
-      [IDL.Opt(Disease), IDL.Opt(IDL.Text)],
-      [IDL.Vec(CaseReport)],
+  '_caffeineStorageBlobIsLive' : IDL.Func(
+      [IDL.Vec(IDL.Nat8)],
+      [IDL.Bool],
       ['query'],
     ),
-  'getOutbreakAlerts' : IDL.Func([], [IDL.Vec(OutbreakAlert)], ['query']),
+  '_caffeineStorageBlobsToDelete' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Vec(IDL.Nat8))],
+      ['query'],
+    ),
+  '_caffeineStorageConfirmBlobDeletion' : IDL.Func(
+      [IDL.Vec(IDL.Vec(IDL.Nat8))],
+      [],
+      [],
+    ),
+  '_caffeineStorageCreateCertificate' : IDL.Func(
+      [IDL.Text],
+      [_CaffeineStorageCreateCertificateResult],
+      [],
+    ),
+  '_caffeineStorageRefillCashier' : IDL.Func(
+      [IDL.Opt(_CaffeineStorageRefillInformation)],
+      [_CaffeineStorageRefillResult],
+      [],
+    ),
+  '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
+  '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'getArticleById' : IDL.Func([IDL.Nat], [IDL.Opt(JournalArticle)], ['query']),
+  'getArticles' : IDL.Func([], [IDL.Vec(JournalArticle)], ['query']),
+  'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
+  'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getFeaturedArticles' : IDL.Func([], [IDL.Vec(JournalArticle)], ['query']),
+  'getLatestArticles' : IDL.Func(
+      [IDL.Nat],
+      [IDL.Vec(JournalArticle)],
+      ['query'],
+    ),
+  'getPaperStatus' : IDL.Func([IDL.Nat], [IDL.Opt(ArticleStatus)], ['query']),
+  'getReviewerApplications' : IDL.Func(
+      [],
+      [IDL.Vec(ReviewerApplication)],
+      ['query'],
+    ),
+  'getSubmissions' : IDL.Func([], [IDL.Vec(ManuscriptSubmission)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-  'rejectReport' : IDL.Func([IDL.Nat], [], []),
-  'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-  'submitCaseReport' : IDL.Func(
-      [
-        PatientDemographics,
-        Disease,
-        CaseClassification,
-        IDL.Text,
-        IDL.Text,
-        ClinicalOutcome,
-      ],
+  'publishArticle' : IDL.Func(
+      [IDL.Nat, IDL.Text, Time, IDL.Bool],
       [IDL.Nat],
       [],
     ),
-  'updateCaseReport' : IDL.Func(
-      [
-        IDL.Nat,
-        PatientDemographics,
-        Disease,
-        CaseClassification,
-        IDL.Text,
-        IDL.Text,
-        ClinicalOutcome,
-      ],
+  'registerReviewer' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Vec(IDL.Text)],
       [],
       [],
     ),
+  'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'setFeatured' : IDL.Func([IDL.Nat, IDL.Bool], [], []),
+  'submitManuscript' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Vec(IDL.Text), IDL.Text, IDL.Text, ExternalBlob],
+      [IDL.Nat],
+      [],
+    ),
+  'updatePaperStatus' : IDL.Func([IDL.Nat, ArticleStatus], [], []),
 });
 
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
+  const _CaffeineStorageCreateCertificateResult = IDL.Record({
+    'method' : IDL.Text,
+    'blob_hash' : IDL.Text,
+  });
+  const _CaffeineStorageRefillInformation = IDL.Record({
+    'proposed_top_up_amount' : IDL.Opt(IDL.Nat),
+  });
+  const _CaffeineStorageRefillResult = IDL.Record({
+    'success' : IDL.Opt(IDL.Bool),
+    'topped_up_amount' : IDL.Opt(IDL.Nat),
+  });
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
-  const TestResult = IDL.Variant({
-    'indeterminate' : IDL.Null,
-    'negative' : IDL.Null,
-    'positive' : IDL.Null,
+  const ExternalBlob = IDL.Vec(IDL.Nat8);
+  const ArticleStatus = IDL.Variant({
+    'underReview' : IDL.Null,
+    'published' : IDL.Null,
+    'rejected' : IDL.Null,
   });
-  const TestType = IDL.Variant({
-    'pcr' : IDL.Null,
-    'rdt' : IDL.Null,
-    'culture' : IDL.Null,
-    'elisa' : IDL.Null,
-  });
-  const LabResult = IDL.Record({
-    'result' : TestResult,
-    'testType' : TestType,
-    'collectionDate' : IDL.Text,
-    'labName' : IDL.Text,
-  });
-  const Disease = IDL.Variant({
-    'yellowFever' : IDL.Null,
-    'mpox' : IDL.Null,
-    'meningitis' : IDL.Null,
-    'marburg' : IDL.Null,
-    'ebola' : IDL.Null,
-    'covid19' : IDL.Null,
-    'lassaFever' : IDL.Null,
-    'cholera' : IDL.Null,
-  });
-  const ClinicalOutcome = IDL.Variant({
-    'alive' : IDL.Null,
-    'dead' : IDL.Null,
-    'unknown' : IDL.Null,
-  });
-  const AnalyticsSummary = IDL.Record({
-    'weeklyCounts' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat)),
-    'casesByDisease' : IDL.Vec(IDL.Tuple(Disease, IDL.Nat)),
-    'casesByOutcome' : IDL.Vec(IDL.Tuple(ClinicalOutcome, IDL.Nat)),
-    'casesByAgeGroup' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat)),
-    'casesBySex' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat)),
-    'casesByState' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat)),
+  const Time = IDL.Int;
+  const JournalArticle = IDL.Record({
+    'id' : IDL.Nat,
+    'pdf' : ExternalBlob,
+    'status' : ArticleStatus,
+    'title' : IDL.Text,
+    'featured' : IDL.Bool,
+    'authors' : IDL.Vec(IDL.Text),
+    'publicationDate' : IDL.Opt(Time),
+    'journalName' : IDL.Text,
+    'abstract' : IDL.Text,
+    'category' : IDL.Text,
   });
   const UserProfile = IDL.Record({
     'name' : IDL.Text,
     'role' : IDL.Text,
     'organization' : IDL.Text,
   });
-  const CaseStatus = IDL.Variant({
-    'pending' : IDL.Null,
-    'approved' : IDL.Null,
-    'rejected' : IDL.Null,
+  const ReviewerApplication = IDL.Record({
+    'institution' : IDL.Text,
+    'name' : IDL.Text,
+    'qualifications' : IDL.Text,
+    'email' : IDL.Text,
+    'expertise' : IDL.Vec(IDL.Text),
   });
-  const Time = IDL.Int;
-  const PatientDemographics = IDL.Record({
-    'age' : IDL.Nat,
-    'lga' : IDL.Text,
-    'sex' : IDL.Text,
-    'state' : IDL.Text,
-  });
-  const CaseClassification = IDL.Variant({
-    'probable' : IDL.Null,
-    'suspected' : IDL.Null,
-    'confirmed' : IDL.Null,
-  });
-  const CaseReport = IDL.Record({
+  const ManuscriptSubmission = IDL.Record({
     'id' : IDL.Nat,
-    'status' : CaseStatus,
-    'exposureHistory' : IDL.Text,
-    'symptomsDate' : IDL.Text,
-    'timestamp' : Time,
-    'disease' : Disease,
-    'labResult' : IDL.Opt(LabResult),
-    'outcome' : ClinicalOutcome,
-    'reporter' : IDL.Principal,
-    'demographics' : PatientDemographics,
-    'classification' : CaseClassification,
-  });
-  const AlertLevel = IDL.Variant({
-    'warning' : IDL.Null,
-    'emergency' : IDL.Null,
-    'watch' : IDL.Null,
-  });
-  const OutbreakAlert = IDL.Record({
-    'caseCount' : IDL.Nat,
-    'alertLevel' : AlertLevel,
-    'state' : IDL.Text,
-    'disease' : Disease,
-    'weekStart' : Time,
+    'status' : ArticleStatus,
+    'title' : IDL.Text,
+    'authors' : IDL.Vec(IDL.Text),
+    'contactEmail' : IDL.Text,
+    'abstract' : IDL.Text,
+    'category' : IDL.Text,
+    'manuscriptFile' : ExternalBlob,
   });
   
   return IDL.Service({
-    '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-    'approveReport' : IDL.Func([IDL.Nat], [], []),
-    'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-    'attachLabResult' : IDL.Func([IDL.Nat, LabResult], [], []),
-    'getAnalyticsSummary' : IDL.Func([], [AnalyticsSummary], ['query']),
-    'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
-    'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
-    'getCaseById' : IDL.Func([IDL.Nat], [CaseReport], ['query']),
-    'getCaseReports' : IDL.Func(
-        [IDL.Opt(Disease), IDL.Opt(IDL.Text)],
-        [IDL.Vec(CaseReport)],
+    '_caffeineStorageBlobIsLive' : IDL.Func(
+        [IDL.Vec(IDL.Nat8)],
+        [IDL.Bool],
         ['query'],
       ),
-    'getOutbreakAlerts' : IDL.Func([], [IDL.Vec(OutbreakAlert)], ['query']),
+    '_caffeineStorageBlobsToDelete' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Vec(IDL.Nat8))],
+        ['query'],
+      ),
+    '_caffeineStorageConfirmBlobDeletion' : IDL.Func(
+        [IDL.Vec(IDL.Vec(IDL.Nat8))],
+        [],
+        [],
+      ),
+    '_caffeineStorageCreateCertificate' : IDL.Func(
+        [IDL.Text],
+        [_CaffeineStorageCreateCertificateResult],
+        [],
+      ),
+    '_caffeineStorageRefillCashier' : IDL.Func(
+        [IDL.Opt(_CaffeineStorageRefillInformation)],
+        [_CaffeineStorageRefillResult],
+        [],
+      ),
+    '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
+    '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'getArticleById' : IDL.Func(
+        [IDL.Nat],
+        [IDL.Opt(JournalArticle)],
+        ['query'],
+      ),
+    'getArticles' : IDL.Func([], [IDL.Vec(JournalArticle)], ['query']),
+    'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
+    'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getFeaturedArticles' : IDL.Func([], [IDL.Vec(JournalArticle)], ['query']),
+    'getLatestArticles' : IDL.Func(
+        [IDL.Nat],
+        [IDL.Vec(JournalArticle)],
+        ['query'],
+      ),
+    'getPaperStatus' : IDL.Func([IDL.Nat], [IDL.Opt(ArticleStatus)], ['query']),
+    'getReviewerApplications' : IDL.Func(
+        [],
+        [IDL.Vec(ReviewerApplication)],
+        ['query'],
+      ),
+    'getSubmissions' : IDL.Func([], [IDL.Vec(ManuscriptSubmission)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-    'rejectReport' : IDL.Func([IDL.Nat], [], []),
+    'publishArticle' : IDL.Func(
+        [IDL.Nat, IDL.Text, Time, IDL.Bool],
+        [IDL.Nat],
+        [],
+      ),
+    'registerReviewer' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Vec(IDL.Text)],
+        [],
+        [],
+      ),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-    'submitCaseReport' : IDL.Func(
+    'setFeatured' : IDL.Func([IDL.Nat, IDL.Bool], [], []),
+    'submitManuscript' : IDL.Func(
         [
-          PatientDemographics,
-          Disease,
-          CaseClassification,
           IDL.Text,
           IDL.Text,
-          ClinicalOutcome,
+          IDL.Vec(IDL.Text),
+          IDL.Text,
+          IDL.Text,
+          ExternalBlob,
         ],
         [IDL.Nat],
         [],
       ),
-    'updateCaseReport' : IDL.Func(
-        [
-          IDL.Nat,
-          PatientDemographics,
-          Disease,
-          CaseClassification,
-          IDL.Text,
-          IDL.Text,
-          ClinicalOutcome,
-        ],
-        [],
-        [],
-      ),
+    'updatePaperStatus' : IDL.Func([IDL.Nat, ArticleStatus], [], []),
   });
 };
 

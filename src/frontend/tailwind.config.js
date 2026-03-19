@@ -18,6 +18,7 @@ export default {
       fontFamily: {
         display: ["Bricolage Grotesque", "sans-serif"],
         sans: ["Plus Jakarta Sans", "sans-serif"],
+        serif: ["Lora", "Georgia", "serif"],
       },
       colors: {
         border: "oklch(var(--border))",
@@ -86,7 +87,7 @@ export default {
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgba(0,0,0,0.05)",
-        card: "0 2px 8px 0 rgba(0,60,30,0.08), 0 1px 2px 0 rgba(0,40,20,0.04)",
+        card: "0 2px 8px 0 rgba(11,44,69,0.08), 0 1px 2px 0 rgba(11,44,69,0.04)",
       },
       keyframes: {
         "accordion-down": {

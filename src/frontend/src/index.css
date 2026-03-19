@@ -1,0 +1,86 @@
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Lora:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0.985 0.005 245;
+    --foreground: 0.14 0.025 245;
+    --card: 1 0 0;
+    --card-foreground: 0.14 0.025 245;
+    --popover: 1 0 0;
+    --popover-foreground: 0.14 0.025 245;
+    --primary: 0.28 0.12 245;
+    --primary-foreground: 0.98 0.005 245;
+    --secondary: 0.88 0.04 245;
+    --secondary-foreground: 0.22 0.07 245;
+    --muted: 0.93 0.012 245;
+    --muted-foreground: 0.48 0.04 245;
+    --accent: 0.9 0.045 245;
+    --accent-foreground: 0.22 0.07 245;
+    --destructive: 0.55 0.22 20;
+    --destructive-foreground: 0.98 0.005 0;
+    --border: 0.88 0.022 245;
+    --input: 0.88 0.022 245;
+    --ring: 0.28 0.12 245;
+    --radius: 0.5rem;
+
+    --chart-1: 0.55 0.18 245;
+    --chart-2: 0.72 0.14 75;
+    --chart-3: 0.6 0.2 20;
+    --chart-4: 0.62 0.14 180;
+    --chart-5: 0.55 0.16 290;
+
+    --sidebar: 0.2 0.07 245;
+    --sidebar-foreground: 0.9 0.02 245;
+    --sidebar-primary: 0.75 0.14 245;
+    --sidebar-primary-foreground: 0.12 0.04 245;
+    --sidebar-accent: 0.26 0.08 245;
+    --sidebar-accent-foreground: 0.92 0.015 245;
+    --sidebar-border: 0.27 0.065 245;
+    --sidebar-ring: 0.6 0.12 245;
+
+    --success: 0.55 0.18 145;
+    --success-foreground: 0.98 0.005 145;
+    --warning: 0.72 0.14 75;
+    --warning-foreground: 0.2 0.04 75;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  .text-success {
+    color: oklch(var(--success));
+  }
+  .bg-success {
+    background-color: oklch(var(--success));
+  }
+  .text-success-foreground {
+    color: oklch(var(--success-foreground));
+  }
+  .bg-warning {
+    background-color: oklch(var(--warning));
+  }
+  .text-warning-foreground {
+    color: oklch(var(--warning-foreground));
+  }
+}

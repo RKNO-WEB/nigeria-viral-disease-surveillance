@@ -1,157 +1,175 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type {
-  CaseClassification,
-  ClinicalOutcome,
-  Disease,
-  LabResult,
-  PatientDemographics,
-  UserProfile,
-} from "../backend";
+import type { ArticleStatus, ExternalBlob } from "../backend";
 import { useActor } from "./useActor";
 
-export function useUserRole() {
+export function useArticles() {
+  const { actor } = useActor();
+  return useQuery({
+    queryKey: ["articles"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getArticles();
+    },
+    enabled: !!actor,
+  });
+}
+
+export function useArticle(id: bigint) {
+  const { actor } = useActor();
+  return useQuery({
+    queryKey: ["article", id.toString()],
+    queryFn: async () => {
+      if (!actor) return null;
+      return actor.getArticleById(id);
+    },
+    enabled: !!actor,
+  });
+}
+
+export function useFeaturedArticles() {
   const { actor, isFetching } = useActor();
+  return useQuery({
+    queryKey: ["featuredArticles"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getFeaturedArticles();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useLatestArticles(limit: bigint) {
+  const { actor, isFetching } = useActor();
+  return useQuery({
+    queryKey: ["latestArticles", limit.toString()],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getLatestArticles(limit);
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function usePaperStatus(paperId: bigint | null) {
+  const { actor } = useActor();
+  return useQuery({
+    queryKey: ["paperStatus", paperId?.toString()],
+    queryFn: async () => {
+      if (!actor || paperId === null) return null;
+      return actor.getPaperStatus(paperId);
+    },
+    enabled: !!actor && paperId !== null,
+  });
+}
+
+export function useUserRole() {
+  const { actor } = useActor();
   return useQuery({
     queryKey: ["userRole"],
     queryFn: async () => {
       if (!actor) return null;
       return actor.getCallerUserRole();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
 export function useIsAdmin() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
   return useQuery({
     queryKey: ["isAdmin"],
     queryFn: async () => {
       if (!actor) return false;
       return actor.isCallerAdmin();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
 export function useUserProfile() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
   return useQuery({
     queryKey: ["userProfile"],
     queryFn: async () => {
       if (!actor) return null;
       return actor.getCallerUserProfile();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
-export function useAnalyticsSummary() {
-  const { actor, isFetching } = useActor();
+export function useReviewerApplications() {
+  const { actor } = useActor();
   return useQuery({
-    queryKey: ["analytics"],
-    queryFn: async () => {
-      if (!actor) return null;
-      return actor.getAnalyticsSummary();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-export function useOutbreakAlerts() {
-  const { actor, isFetching } = useActor();
-  return useQuery({
-    queryKey: ["alerts"],
+    queryKey: ["reviewerApplications"],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getOutbreakAlerts();
+      return actor.getReviewerApplications();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
-export function useCaseReports(
-  filterDisease: Disease | null = null,
-  filterState: string | null = null,
-) {
-  const { actor, isFetching } = useActor();
-  return useQuery({
-    queryKey: ["caseReports", filterDisease, filterState],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getCaseReports(filterDisease, filterState);
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-export function useSubmitCaseReport() {
+export function useSubmitManuscript() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (params: {
-      demographics: PatientDemographics;
-      disease: Disease;
-      classification: CaseClassification;
-      symptomsDate: string;
-      exposureHistory: string;
-      outcome: ClinicalOutcome;
+      title: string;
+      abstract: string;
+      authors: string[];
+      category: string;
+      contactEmail: string;
+      pdf: ExternalBlob;
     }) => {
       if (!actor) throw new Error("Not connected");
-      return actor.submitCaseReport(
-        params.demographics,
-        params.disease,
-        params.classification,
-        params.symptomsDate,
-        params.exposureHistory,
-        params.outcome,
+      return actor.submitManuscript(
+        params.title,
+        params.abstract,
+        params.authors,
+        params.category,
+        params.contactEmail,
+        params.pdf,
       );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["caseReports"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics"] });
+      void queryClient.invalidateQueries({ queryKey: ["articles"] });
     },
   });
 }
 
-export function useAttachLabResult() {
+export function useRegisterReviewer() {
   const { actor } = useActor();
-  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (params: { reportId: bigint; labResult: LabResult }) => {
+    mutationFn: async (params: {
+      name: string;
+      email: string;
+      institution: string;
+      qualifications: string;
+      expertise: string[];
+    }) => {
       if (!actor) throw new Error("Not connected");
-      return actor.attachLabResult(params.reportId, params.labResult);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["caseReports"] });
+      return actor.registerReviewer(
+        params.name,
+        params.email,
+        params.institution,
+        params.qualifications,
+        params.expertise,
+      );
     },
   });
 }
 
-export function useApproveReport() {
+export function useUpdatePaperStatus() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (reportId: bigint) => {
+    mutationFn: async (params: { paperId: bigint; status: ArticleStatus }) => {
       if (!actor) throw new Error("Not connected");
-      return actor.approveReport(reportId);
+      return actor.updatePaperStatus(params.paperId, params.status);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["caseReports"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics"] });
-    },
-  });
-}
-
-export function useRejectReport() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (reportId: bigint) => {
-      if (!actor) throw new Error("Not connected");
-      return actor.rejectReport(reportId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["caseReports"] });
+      void queryClient.invalidateQueries({ queryKey: ["articles"] });
     },
   });
 }
@@ -160,12 +178,16 @@ export function useSaveProfile() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (profile: UserProfile) => {
+    mutationFn: async (profile: {
+      name: string;
+      role: string;
+      organization: string;
+    }) => {
       if (!actor) throw new Error("Not connected");
       return actor.saveCallerUserProfile(profile);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      void queryClient.invalidateQueries({ queryKey: ["userProfile"] });
     },
   });
 }

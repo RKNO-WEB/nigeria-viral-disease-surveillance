@@ -90,91 +90,55 @@ export class ExternalBlob {
     }
 }
 export type Time = bigint;
-export interface AnalyticsSummary {
-    weeklyCounts: Array<[string, bigint]>;
-    casesByDisease: Array<[Disease, bigint]>;
-    casesByOutcome: Array<[ClinicalOutcome, bigint]>;
-    casesByAgeGroup: Array<[string, bigint]>;
-    casesBySex: Array<[string, bigint]>;
-    casesByState: Array<[string, bigint]>;
+export interface ReviewerApplication {
+    institution: string;
+    name: string;
+    qualifications: string;
+    email: string;
+    expertise: Array<string>;
 }
-export interface PatientDemographics {
-    age: bigint;
-    lga: string;
-    sex: string;
-    state: string;
-}
-export interface LabResult {
-    result: TestResult;
-    testType: TestType;
-    collectionDate: string;
-    labName: string;
-}
-export interface CaseReport {
+export interface JournalArticle {
     id: bigint;
-    status: CaseStatus;
-    exposureHistory: string;
-    symptomsDate: string;
-    timestamp: Time;
-    disease: Disease;
-    labResult?: LabResult;
-    outcome: ClinicalOutcome;
-    reporter: Principal;
-    demographics: PatientDemographics;
-    classification: CaseClassification;
+    pdf: ExternalBlob;
+    status: ArticleStatus;
+    title: string;
+    featured: boolean;
+    authors: Array<string>;
+    publicationDate?: Time;
+    journalName: string;
+    abstract: string;
+    category: string;
 }
-export interface OutbreakAlert {
-    caseCount: bigint;
-    alertLevel: AlertLevel;
-    state: string;
-    disease: Disease;
-    weekStart: Time;
+export interface _CaffeineStorageRefillInformation {
+    proposed_top_up_amount?: bigint;
+}
+export interface _CaffeineStorageCreateCertificateResult {
+    method: string;
+    blob_hash: string;
+}
+export interface ManuscriptSubmission {
+    id: bigint;
+    status: ArticleStatus;
+    title: string;
+    authors: Array<string>;
+    contactEmail: string;
+    abstract: string;
+    category: string;
+    manuscriptFile: ExternalBlob;
 }
 export interface UserProfile {
     name: string;
     role: string;
     organization: string;
 }
-export enum AlertLevel {
-    warning = "warning",
-    emergency = "emergency",
-    watch = "watch"
+export interface _CaffeineStorageRefillResult {
+    success?: boolean;
+    topped_up_amount?: bigint;
 }
-export enum CaseClassification {
-    probable = "probable",
-    suspected = "suspected",
-    confirmed = "confirmed"
-}
-export enum CaseStatus {
-    pending = "pending",
-    approved = "approved",
+export enum ArticleStatus {
+    underReview = "underReview",
+    published = "published",
     rejected = "rejected"
-}
-export enum ClinicalOutcome {
-    alive = "alive",
-    dead = "dead",
-    unknown_ = "unknown"
-}
-export enum Disease {
-    yellowFever = "yellowFever",
-    mpox = "mpox",
-    meningitis = "meningitis",
-    marburg = "marburg",
-    ebola = "ebola",
-    covid19 = "covid19",
-    lassaFever = "lassaFever",
-    cholera = "cholera"
-}
-export enum TestResult {
-    indeterminate = "indeterminate",
-    negative = "negative",
-    positive = "positive"
-}
-export enum TestType {
-    pcr = "pcr",
-    rdt = "rdt",
-    culture = "culture",
-    elisa = "elisa"
 }
 export enum UserRole {
     admin = "admin",
@@ -182,26 +146,119 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
+    _caffeineStorageBlobIsLive(hash: Uint8Array): Promise<boolean>;
+    _caffeineStorageBlobsToDelete(): Promise<Array<Uint8Array>>;
+    _caffeineStorageConfirmBlobDeletion(blobs: Array<Uint8Array>): Promise<void>;
+    _caffeineStorageCreateCertificate(blobHash: string): Promise<_CaffeineStorageCreateCertificateResult>;
+    _caffeineStorageRefillCashier(refillInformation: _CaffeineStorageRefillInformation | null): Promise<_CaffeineStorageRefillResult>;
+    _caffeineStorageUpdateGatewayPrincipals(): Promise<void>;
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
-    approveReport(reportId: bigint): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    attachLabResult(reportId: bigint, labResult: LabResult): Promise<void>;
-    getAnalyticsSummary(): Promise<AnalyticsSummary>;
+    getArticleById(id: bigint): Promise<JournalArticle | null>;
+    getArticles(): Promise<Array<JournalArticle>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
-    getCaseById(id: bigint): Promise<CaseReport>;
-    getCaseReports(filterDisease: Disease | null, filterState: string | null): Promise<Array<CaseReport>>;
-    getOutbreakAlerts(): Promise<Array<OutbreakAlert>>;
+    getFeaturedArticles(): Promise<Array<JournalArticle>>;
+    getLatestArticles(limit: bigint): Promise<Array<JournalArticle>>;
+    getPaperStatus(paperId: bigint): Promise<ArticleStatus | null>;
+    getReviewerApplications(): Promise<Array<ReviewerApplication>>;
+    getSubmissions(): Promise<Array<ManuscriptSubmission>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
-    rejectReport(reportId: bigint): Promise<void>;
+    publishArticle(submissionId: bigint, journalName: string, publicationDate: Time, featured: boolean): Promise<bigint>;
+    registerReviewer(name: string, email: string, institution: string, qualifications: string, expertise: Array<string>): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
-    submitCaseReport(demographics: PatientDemographics, disease: Disease, classification: CaseClassification, symptomsDate: string, exposureHistory: string, outcome: ClinicalOutcome): Promise<bigint>;
-    updateCaseReport(id: bigint, demographics: PatientDemographics, disease: Disease, classification: CaseClassification, symptomsDate: string, exposureHistory: string, outcome: ClinicalOutcome): Promise<void>;
+    setFeatured(articleId: bigint, featured: boolean): Promise<void>;
+    submitManuscript(title: string, abstract: string, authors: Array<string>, category: string, contactEmail: string, pdf: ExternalBlob): Promise<bigint>;
+    updatePaperStatus(paperId: bigint, status: ArticleStatus): Promise<void>;
 }
-import type { AlertLevel as _AlertLevel, AnalyticsSummary as _AnalyticsSummary, CaseClassification as _CaseClassification, CaseReport as _CaseReport, CaseStatus as _CaseStatus, ClinicalOutcome as _ClinicalOutcome, Disease as _Disease, LabResult as _LabResult, OutbreakAlert as _OutbreakAlert, PatientDemographics as _PatientDemographics, TestResult as _TestResult, TestType as _TestType, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { ArticleStatus as _ArticleStatus, ExternalBlob as _ExternalBlob, JournalArticle as _JournalArticle, ManuscriptSubmission as _ManuscriptSubmission, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
+    async _caffeineStorageBlobIsLive(arg0: Uint8Array): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor._caffeineStorageBlobIsLive(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor._caffeineStorageBlobIsLive(arg0);
+            return result;
+        }
+    }
+    async _caffeineStorageBlobsToDelete(): Promise<Array<Uint8Array>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor._caffeineStorageBlobsToDelete();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor._caffeineStorageBlobsToDelete();
+            return result;
+        }
+    }
+    async _caffeineStorageConfirmBlobDeletion(arg0: Array<Uint8Array>): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor._caffeineStorageConfirmBlobDeletion(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor._caffeineStorageConfirmBlobDeletion(arg0);
+            return result;
+        }
+    }
+    async _caffeineStorageCreateCertificate(arg0: string): Promise<_CaffeineStorageCreateCertificateResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor._caffeineStorageCreateCertificate(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor._caffeineStorageCreateCertificate(arg0);
+            return result;
+        }
+    }
+    async _caffeineStorageRefillCashier(arg0: _CaffeineStorageRefillInformation | null): Promise<_CaffeineStorageRefillResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor._caffeineStorageRefillCashier(to_candid_opt_n1(this._uploadFile, this._downloadFile, arg0));
+                return from_candid__CaffeineStorageRefillResult_n4(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor._caffeineStorageRefillCashier(to_candid_opt_n1(this._uploadFile, this._downloadFile, arg0));
+            return from_candid__CaffeineStorageRefillResult_n4(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async _caffeineStorageUpdateGatewayPrincipals(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor._caffeineStorageUpdateGatewayPrincipals();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor._caffeineStorageUpdateGatewayPrincipals();
+            return result;
+        }
+    }
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
         if (this.processError) {
             try {
@@ -216,144 +273,158 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async approveReport(arg0: bigint): Promise<void> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.approveReport(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.approveReport(arg0);
-            return result;
-        }
-    }
     async assignCallerUserRole(arg0: Principal, arg1: UserRole): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n1(this._uploadFile, this._downloadFile, arg1));
+                const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n8(this._uploadFile, this._downloadFile, arg1));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n1(this._uploadFile, this._downloadFile, arg1));
+            const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n8(this._uploadFile, this._downloadFile, arg1));
             return result;
         }
     }
-    async attachLabResult(arg0: bigint, arg1: LabResult): Promise<void> {
+    async getArticleById(arg0: bigint): Promise<JournalArticle | null> {
         if (this.processError) {
             try {
-                const result = await this.actor.attachLabResult(arg0, to_candid_LabResult_n3(this._uploadFile, this._downloadFile, arg1));
-                return result;
+                const result = await this.actor.getArticleById(arg0);
+                return from_candid_opt_n10(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.attachLabResult(arg0, to_candid_LabResult_n3(this._uploadFile, this._downloadFile, arg1));
-            return result;
+            const result = await this.actor.getArticleById(arg0);
+            return from_candid_opt_n10(this._uploadFile, this._downloadFile, result);
         }
     }
-    async getAnalyticsSummary(): Promise<AnalyticsSummary> {
+    async getArticles(): Promise<Array<JournalArticle>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getAnalyticsSummary();
-                return from_candid_AnalyticsSummary_n9(this._uploadFile, this._downloadFile, result);
+                const result = await this.actor.getArticles();
+                return from_candid_vec_n17(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getAnalyticsSummary();
-            return from_candid_AnalyticsSummary_n9(this._uploadFile, this._downloadFile, result);
+            const result = await this.actor.getArticles();
+            return from_candid_vec_n17(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCallerUserProfile(): Promise<UserProfile | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getCallerUserProfile();
-                return from_candid_opt_n19(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCallerUserProfile();
-            return from_candid_opt_n19(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCallerUserRole(): Promise<UserRole> {
         if (this.processError) {
             try {
                 const result = await this.actor.getCallerUserRole();
-                return from_candid_UserRole_n20(this._uploadFile, this._downloadFile, result);
+                return from_candid_UserRole_n19(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCallerUserRole();
-            return from_candid_UserRole_n20(this._uploadFile, this._downloadFile, result);
+            return from_candid_UserRole_n19(this._uploadFile, this._downloadFile, result);
         }
     }
-    async getCaseById(arg0: bigint): Promise<CaseReport> {
+    async getFeaturedArticles(): Promise<Array<JournalArticle>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getCaseById(arg0);
-                return from_candid_CaseReport_n22(this._uploadFile, this._downloadFile, result);
+                const result = await this.actor.getFeaturedArticles();
+                return from_candid_vec_n17(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getCaseById(arg0);
-            return from_candid_CaseReport_n22(this._uploadFile, this._downloadFile, result);
+            const result = await this.actor.getFeaturedArticles();
+            return from_candid_vec_n17(this._uploadFile, this._downloadFile, result);
         }
     }
-    async getCaseReports(arg0: Disease | null, arg1: string | null): Promise<Array<CaseReport>> {
+    async getLatestArticles(arg0: bigint): Promise<Array<JournalArticle>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getCaseReports(to_candid_opt_n35(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n38(this._uploadFile, this._downloadFile, arg1));
-                return from_candid_vec_n39(this._uploadFile, this._downloadFile, result);
+                const result = await this.actor.getLatestArticles(arg0);
+                return from_candid_vec_n17(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getCaseReports(to_candid_opt_n35(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n38(this._uploadFile, this._downloadFile, arg1));
-            return from_candid_vec_n39(this._uploadFile, this._downloadFile, result);
+            const result = await this.actor.getLatestArticles(arg0);
+            return from_candid_vec_n17(this._uploadFile, this._downloadFile, result);
         }
     }
-    async getOutbreakAlerts(): Promise<Array<OutbreakAlert>> {
+    async getPaperStatus(arg0: bigint): Promise<ArticleStatus | null> {
         if (this.processError) {
             try {
-                const result = await this.actor.getOutbreakAlerts();
-                return from_candid_vec_n40(this._uploadFile, this._downloadFile, result);
+                const result = await this.actor.getPaperStatus(arg0);
+                return from_candid_opt_n21(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getOutbreakAlerts();
-            return from_candid_vec_n40(this._uploadFile, this._downloadFile, result);
+            const result = await this.actor.getPaperStatus(arg0);
+            return from_candid_opt_n21(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getReviewerApplications(): Promise<Array<ReviewerApplication>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getReviewerApplications();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getReviewerApplications();
+            return result;
+        }
+    }
+    async getSubmissions(): Promise<Array<ManuscriptSubmission>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getSubmissions();
+                return from_candid_vec_n22(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getSubmissions();
+            return from_candid_vec_n22(this._uploadFile, this._downloadFile, result);
         }
     }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getUserProfile(arg0);
-                return from_candid_opt_n19(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getUserProfile(arg0);
-            return from_candid_opt_n19(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
         }
     }
     async isCallerAdmin(): Promise<boolean> {
@@ -370,17 +441,31 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async rejectReport(arg0: bigint): Promise<void> {
+    async publishArticle(arg0: bigint, arg1: string, arg2: Time, arg3: boolean): Promise<bigint> {
         if (this.processError) {
             try {
-                const result = await this.actor.rejectReport(arg0);
+                const result = await this.actor.publishArticle(arg0, arg1, arg2, arg3);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.rejectReport(arg0);
+            const result = await this.actor.publishArticle(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
+    async registerReviewer(arg0: string, arg1: string, arg2: string, arg3: string, arg4: Array<string>): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.registerReviewer(arg0, arg1, arg2, arg3, arg4);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.registerReviewer(arg0, arg1, arg2, arg3, arg4);
             return result;
         }
     }
@@ -398,220 +483,173 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async submitCaseReport(arg0: PatientDemographics, arg1: Disease, arg2: CaseClassification, arg3: string, arg4: string, arg5: ClinicalOutcome): Promise<bigint> {
+    async setFeatured(arg0: bigint, arg1: boolean): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.submitCaseReport(arg0, to_candid_Disease_n36(this._uploadFile, this._downloadFile, arg1), to_candid_CaseClassification_n45(this._uploadFile, this._downloadFile, arg2), arg3, arg4, to_candid_ClinicalOutcome_n47(this._uploadFile, this._downloadFile, arg5));
+                const result = await this.actor.setFeatured(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.submitCaseReport(arg0, to_candid_Disease_n36(this._uploadFile, this._downloadFile, arg1), to_candid_CaseClassification_n45(this._uploadFile, this._downloadFile, arg2), arg3, arg4, to_candid_ClinicalOutcome_n47(this._uploadFile, this._downloadFile, arg5));
+            const result = await this.actor.setFeatured(arg0, arg1);
             return result;
         }
     }
-    async updateCaseReport(arg0: bigint, arg1: PatientDemographics, arg2: Disease, arg3: CaseClassification, arg4: string, arg5: string, arg6: ClinicalOutcome): Promise<void> {
+    async submitManuscript(arg0: string, arg1: string, arg2: Array<string>, arg3: string, arg4: string, arg5: ExternalBlob): Promise<bigint> {
         if (this.processError) {
             try {
-                const result = await this.actor.updateCaseReport(arg0, arg1, to_candid_Disease_n36(this._uploadFile, this._downloadFile, arg2), to_candid_CaseClassification_n45(this._uploadFile, this._downloadFile, arg3), arg4, arg5, to_candid_ClinicalOutcome_n47(this._uploadFile, this._downloadFile, arg6));
+                const result = await this.actor.submitManuscript(arg0, arg1, arg2, arg3, arg4, await to_candid_ExternalBlob_n25(this._uploadFile, this._downloadFile, arg5));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateCaseReport(arg0, arg1, to_candid_Disease_n36(this._uploadFile, this._downloadFile, arg2), to_candid_CaseClassification_n45(this._uploadFile, this._downloadFile, arg3), arg4, arg5, to_candid_ClinicalOutcome_n47(this._uploadFile, this._downloadFile, arg6));
+            const result = await this.actor.submitManuscript(arg0, arg1, arg2, arg3, arg4, await to_candid_ExternalBlob_n25(this._uploadFile, this._downloadFile, arg5));
+            return result;
+        }
+    }
+    async updatePaperStatus(arg0: bigint, arg1: ArticleStatus): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updatePaperStatus(arg0, to_candid_ArticleStatus_n26(this._uploadFile, this._downloadFile, arg1));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updatePaperStatus(arg0, to_candid_ArticleStatus_n26(this._uploadFile, this._downloadFile, arg1));
             return result;
         }
     }
 }
-function from_candid_AlertLevel_n43(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _AlertLevel): AlertLevel {
-    return from_candid_variant_n44(_uploadFile, _downloadFile, value);
+function from_candid_ArticleStatus_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ArticleStatus): ArticleStatus {
+    return from_candid_variant_n15(_uploadFile, _downloadFile, value);
 }
-function from_candid_AnalyticsSummary_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _AnalyticsSummary): AnalyticsSummary {
-    return from_candid_record_n10(_uploadFile, _downloadFile, value);
+async function from_candid_ExternalBlob_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ExternalBlob): Promise<ExternalBlob> {
+    return await _downloadFile(value);
 }
-function from_candid_CaseClassification_n33(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _CaseClassification): CaseClassification {
-    return from_candid_variant_n34(_uploadFile, _downloadFile, value);
+async function from_candid_JournalArticle_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _JournalArticle): Promise<JournalArticle> {
+    return await from_candid_record_n12(_uploadFile, _downloadFile, value);
 }
-function from_candid_CaseReport_n22(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _CaseReport): CaseReport {
-    return from_candid_record_n23(_uploadFile, _downloadFile, value);
+async function from_candid_ManuscriptSubmission_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ManuscriptSubmission): Promise<ManuscriptSubmission> {
+    return await from_candid_record_n24(_uploadFile, _downloadFile, value);
 }
-function from_candid_CaseStatus_n24(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _CaseStatus): CaseStatus {
-    return from_candid_variant_n25(_uploadFile, _downloadFile, value);
+function from_candid_UserRole_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
+    return from_candid_variant_n20(_uploadFile, _downloadFile, value);
 }
-function from_candid_ClinicalOutcome_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ClinicalOutcome): ClinicalOutcome {
-    return from_candid_variant_n18(_uploadFile, _downloadFile, value);
+function from_candid__CaffeineStorageRefillResult_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: __CaffeineStorageRefillResult): _CaffeineStorageRefillResult {
+    return from_candid_record_n5(_uploadFile, _downloadFile, value);
 }
-function from_candid_Disease_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Disease): Disease {
-    return from_candid_variant_n14(_uploadFile, _downloadFile, value);
+async function from_candid_opt_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_JournalArticle]): Promise<JournalArticle | null> {
+    return value.length === 0 ? null : await from_candid_JournalArticle_n11(_uploadFile, _downloadFile, value[0]);
 }
-function from_candid_LabResult_n27(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _LabResult): LabResult {
-    return from_candid_record_n28(_uploadFile, _downloadFile, value);
-}
-function from_candid_OutbreakAlert_n41(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _OutbreakAlert): OutbreakAlert {
-    return from_candid_record_n42(_uploadFile, _downloadFile, value);
-}
-function from_candid_TestResult_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _TestResult): TestResult {
-    return from_candid_variant_n30(_uploadFile, _downloadFile, value);
-}
-function from_candid_TestType_n31(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _TestType): TestType {
-    return from_candid_variant_n32(_uploadFile, _downloadFile, value);
-}
-function from_candid_UserRole_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
-    return from_candid_variant_n21(_uploadFile, _downloadFile, value);
-}
-function from_candid_opt_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
+function from_candid_opt_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Time]): Time | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_LabResult]): LabResult | null {
-    return value.length === 0 ? null : from_candid_LabResult_n27(_uploadFile, _downloadFile, value[0]);
+function from_candid_opt_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
+    return value.length === 0 ? null : value[0];
 }
-function from_candid_record_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    weeklyCounts: Array<[string, bigint]>;
-    casesByDisease: Array<[_Disease, bigint]>;
-    casesByOutcome: Array<[_ClinicalOutcome, bigint]>;
-    casesByAgeGroup: Array<[string, bigint]>;
-    casesBySex: Array<[string, bigint]>;
-    casesByState: Array<[string, bigint]>;
-}): {
-    weeklyCounts: Array<[string, bigint]>;
-    casesByDisease: Array<[Disease, bigint]>;
-    casesByOutcome: Array<[ClinicalOutcome, bigint]>;
-    casesByAgeGroup: Array<[string, bigint]>;
-    casesBySex: Array<[string, bigint]>;
-    casesByState: Array<[string, bigint]>;
-} {
-    return {
-        weeklyCounts: value.weeklyCounts,
-        casesByDisease: from_candid_vec_n11(_uploadFile, _downloadFile, value.casesByDisease),
-        casesByOutcome: from_candid_vec_n15(_uploadFile, _downloadFile, value.casesByOutcome),
-        casesByAgeGroup: value.casesByAgeGroup,
-        casesBySex: value.casesBySex,
-        casesByState: value.casesByState
-    };
+function from_candid_opt_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_ArticleStatus]): ArticleStatus | null {
+    return value.length === 0 ? null : from_candid_ArticleStatus_n14(_uploadFile, _downloadFile, value[0]);
 }
-function from_candid_record_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_opt_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [boolean]): boolean | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [bigint]): bigint | null {
+    return value.length === 0 ? null : value[0];
+}
+async function from_candid_record_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     id: bigint;
-    status: _CaseStatus;
-    exposureHistory: string;
-    symptomsDate: string;
-    timestamp: _Time;
-    disease: _Disease;
-    labResult: [] | [_LabResult];
-    outcome: _ClinicalOutcome;
-    reporter: Principal;
-    demographics: _PatientDemographics;
-    classification: _CaseClassification;
-}): {
+    pdf: _ExternalBlob;
+    status: _ArticleStatus;
+    title: string;
+    featured: boolean;
+    authors: Array<string>;
+    publicationDate: [] | [_Time];
+    journalName: string;
+    abstract: string;
+    category: string;
+}): Promise<{
     id: bigint;
-    status: CaseStatus;
-    exposureHistory: string;
-    symptomsDate: string;
-    timestamp: Time;
-    disease: Disease;
-    labResult?: LabResult;
-    outcome: ClinicalOutcome;
-    reporter: Principal;
-    demographics: PatientDemographics;
-    classification: CaseClassification;
-} {
+    pdf: ExternalBlob;
+    status: ArticleStatus;
+    title: string;
+    featured: boolean;
+    authors: Array<string>;
+    publicationDate?: Time;
+    journalName: string;
+    abstract: string;
+    category: string;
+}> {
     return {
         id: value.id,
-        status: from_candid_CaseStatus_n24(_uploadFile, _downloadFile, value.status),
-        exposureHistory: value.exposureHistory,
-        symptomsDate: value.symptomsDate,
-        timestamp: value.timestamp,
-        disease: from_candid_Disease_n13(_uploadFile, _downloadFile, value.disease),
-        labResult: record_opt_to_undefined(from_candid_opt_n26(_uploadFile, _downloadFile, value.labResult)),
-        outcome: from_candid_ClinicalOutcome_n17(_uploadFile, _downloadFile, value.outcome),
-        reporter: value.reporter,
-        demographics: value.demographics,
-        classification: from_candid_CaseClassification_n33(_uploadFile, _downloadFile, value.classification)
+        pdf: await from_candid_ExternalBlob_n13(_uploadFile, _downloadFile, value.pdf),
+        status: from_candid_ArticleStatus_n14(_uploadFile, _downloadFile, value.status),
+        title: value.title,
+        featured: value.featured,
+        authors: value.authors,
+        publicationDate: record_opt_to_undefined(from_candid_opt_n16(_uploadFile, _downloadFile, value.publicationDate)),
+        journalName: value.journalName,
+        abstract: value.abstract,
+        category: value.category
     };
 }
-function from_candid_record_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    result: _TestResult;
-    testType: _TestType;
-    collectionDate: string;
-    labName: string;
+async function from_candid_record_n24(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: bigint;
+    status: _ArticleStatus;
+    title: string;
+    authors: Array<string>;
+    contactEmail: string;
+    abstract: string;
+    category: string;
+    manuscriptFile: _ExternalBlob;
+}): Promise<{
+    id: bigint;
+    status: ArticleStatus;
+    title: string;
+    authors: Array<string>;
+    contactEmail: string;
+    abstract: string;
+    category: string;
+    manuscriptFile: ExternalBlob;
+}> {
+    return {
+        id: value.id,
+        status: from_candid_ArticleStatus_n14(_uploadFile, _downloadFile, value.status),
+        title: value.title,
+        authors: value.authors,
+        contactEmail: value.contactEmail,
+        abstract: value.abstract,
+        category: value.category,
+        manuscriptFile: await from_candid_ExternalBlob_n13(_uploadFile, _downloadFile, value.manuscriptFile)
+    };
+}
+function from_candid_record_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    success: [] | [boolean];
+    topped_up_amount: [] | [bigint];
 }): {
-    result: TestResult;
-    testType: TestType;
-    collectionDate: string;
-    labName: string;
+    success?: boolean;
+    topped_up_amount?: bigint;
 } {
     return {
-        result: from_candid_TestResult_n29(_uploadFile, _downloadFile, value.result),
-        testType: from_candid_TestType_n31(_uploadFile, _downloadFile, value.testType),
-        collectionDate: value.collectionDate,
-        labName: value.labName
+        success: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.success)),
+        topped_up_amount: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.topped_up_amount))
     };
 }
-function from_candid_record_n42(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    caseCount: bigint;
-    alertLevel: _AlertLevel;
-    state: string;
-    disease: _Disease;
-    weekStart: _Time;
-}): {
-    caseCount: bigint;
-    alertLevel: AlertLevel;
-    state: string;
-    disease: Disease;
-    weekStart: Time;
-} {
-    return {
-        caseCount: value.caseCount,
-        alertLevel: from_candid_AlertLevel_n43(_uploadFile, _downloadFile, value.alertLevel),
-        state: value.state,
-        disease: from_candid_Disease_n13(_uploadFile, _downloadFile, value.disease),
-        weekStart: value.weekStart
-    };
+function from_candid_variant_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    underReview: null;
+} | {
+    published: null;
+} | {
+    rejected: null;
+}): ArticleStatus {
+    return "underReview" in value ? ArticleStatus.underReview : "published" in value ? ArticleStatus.published : "rejected" in value ? ArticleStatus.rejected : value;
 }
-function from_candid_tuple_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [_Disease, bigint]): [Disease, bigint] {
-    return [
-        from_candid_Disease_n13(_uploadFile, _downloadFile, value[0]),
-        value[1]
-    ];
-}
-function from_candid_tuple_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [_ClinicalOutcome, bigint]): [ClinicalOutcome, bigint] {
-    return [
-        from_candid_ClinicalOutcome_n17(_uploadFile, _downloadFile, value[0]),
-        value[1]
-    ];
-}
-function from_candid_variant_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    yellowFever: null;
-} | {
-    mpox: null;
-} | {
-    meningitis: null;
-} | {
-    marburg: null;
-} | {
-    ebola: null;
-} | {
-    covid19: null;
-} | {
-    lassaFever: null;
-} | {
-    cholera: null;
-}): Disease {
-    return "yellowFever" in value ? Disease.yellowFever : "mpox" in value ? Disease.mpox : "meningitis" in value ? Disease.meningitis : "marburg" in value ? Disease.marburg : "ebola" in value ? Disease.ebola : "covid19" in value ? Disease.covid19 : "lassaFever" in value ? Disease.lassaFever : "cholera" in value ? Disease.cholera : value;
-}
-function from_candid_variant_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    alive: null;
-} | {
-    dead: null;
-} | {
-    unknown: null;
-}): ClinicalOutcome {
-    return "alive" in value ? ClinicalOutcome.alive : "dead" in value ? ClinicalOutcome.dead : "unknown" in value ? ClinicalOutcome.unknown : value;
-}
-function from_candid_variant_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     admin: null;
 } | {
     user: null;
@@ -620,111 +658,52 @@ function from_candid_variant_n21(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }): UserRole {
     return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
 }
-function from_candid_variant_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    pending: null;
-} | {
-    approved: null;
-} | {
-    rejected: null;
-}): CaseStatus {
-    return "pending" in value ? CaseStatus.pending : "approved" in value ? CaseStatus.approved : "rejected" in value ? CaseStatus.rejected : value;
+async function from_candid_vec_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_JournalArticle>): Promise<Array<JournalArticle>> {
+    return await Promise.all(value.map(async (x)=>await from_candid_JournalArticle_n11(_uploadFile, _downloadFile, x)));
 }
-function from_candid_variant_n30(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    indeterminate: null;
-} | {
-    negative: null;
-} | {
-    positive: null;
-}): TestResult {
-    return "indeterminate" in value ? TestResult.indeterminate : "negative" in value ? TestResult.negative : "positive" in value ? TestResult.positive : value;
+async function from_candid_vec_n22(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_ManuscriptSubmission>): Promise<Array<ManuscriptSubmission>> {
+    return await Promise.all(value.map(async (x)=>await from_candid_ManuscriptSubmission_n23(_uploadFile, _downloadFile, x)));
 }
-function from_candid_variant_n32(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    pcr: null;
-} | {
-    rdt: null;
-} | {
-    culture: null;
-} | {
-    elisa: null;
-}): TestType {
-    return "pcr" in value ? TestType.pcr : "rdt" in value ? TestType.rdt : "culture" in value ? TestType.culture : "elisa" in value ? TestType.elisa : value;
+function to_candid_ArticleStatus_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ArticleStatus): _ArticleStatus {
+    return to_candid_variant_n27(_uploadFile, _downloadFile, value);
 }
-function from_candid_variant_n34(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    probable: null;
-} | {
-    suspected: null;
-} | {
-    confirmed: null;
-}): CaseClassification {
-    return "probable" in value ? CaseClassification.probable : "suspected" in value ? CaseClassification.suspected : "confirmed" in value ? CaseClassification.confirmed : value;
+async function to_candid_ExternalBlob_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ExternalBlob): Promise<_ExternalBlob> {
+    return await _uploadFile(value);
 }
-function from_candid_variant_n44(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    warning: null;
-} | {
-    emergency: null;
-} | {
-    watch: null;
-}): AlertLevel {
-    return "warning" in value ? AlertLevel.warning : "emergency" in value ? AlertLevel.emergency : "watch" in value ? AlertLevel.watch : value;
+function to_candid_UserRole_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
+    return to_candid_variant_n9(_uploadFile, _downloadFile, value);
 }
-function from_candid_vec_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<[_Disease, bigint]>): Array<[Disease, bigint]> {
-    return value.map((x)=>from_candid_tuple_n12(_uploadFile, _downloadFile, x));
+function to_candid__CaffeineStorageRefillInformation_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _CaffeineStorageRefillInformation): __CaffeineStorageRefillInformation {
+    return to_candid_record_n3(_uploadFile, _downloadFile, value);
 }
-function from_candid_vec_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<[_ClinicalOutcome, bigint]>): Array<[ClinicalOutcome, bigint]> {
-    return value.map((x)=>from_candid_tuple_n16(_uploadFile, _downloadFile, x));
+function to_candid_opt_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _CaffeineStorageRefillInformation | null): [] | [__CaffeineStorageRefillInformation] {
+    return value === null ? candid_none() : candid_some(to_candid__CaffeineStorageRefillInformation_n2(_uploadFile, _downloadFile, value));
 }
-function from_candid_vec_n39(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_CaseReport>): Array<CaseReport> {
-    return value.map((x)=>from_candid_CaseReport_n22(_uploadFile, _downloadFile, x));
-}
-function from_candid_vec_n40(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_OutbreakAlert>): Array<OutbreakAlert> {
-    return value.map((x)=>from_candid_OutbreakAlert_n41(_uploadFile, _downloadFile, x));
-}
-function to_candid_CaseClassification_n45(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: CaseClassification): _CaseClassification {
-    return to_candid_variant_n46(_uploadFile, _downloadFile, value);
-}
-function to_candid_ClinicalOutcome_n47(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ClinicalOutcome): _ClinicalOutcome {
-    return to_candid_variant_n48(_uploadFile, _downloadFile, value);
-}
-function to_candid_Disease_n36(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Disease): _Disease {
-    return to_candid_variant_n37(_uploadFile, _downloadFile, value);
-}
-function to_candid_LabResult_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: LabResult): _LabResult {
-    return to_candid_record_n4(_uploadFile, _downloadFile, value);
-}
-function to_candid_TestResult_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: TestResult): _TestResult {
-    return to_candid_variant_n6(_uploadFile, _downloadFile, value);
-}
-function to_candid_TestType_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: TestType): _TestType {
-    return to_candid_variant_n8(_uploadFile, _downloadFile, value);
-}
-function to_candid_UserRole_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
-    return to_candid_variant_n2(_uploadFile, _downloadFile, value);
-}
-function to_candid_opt_n35(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Disease | null): [] | [_Disease] {
-    return value === null ? candid_none() : candid_some(to_candid_Disease_n36(_uploadFile, _downloadFile, value));
-}
-function to_candid_opt_n38(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: string | null): [] | [string] {
-    return value === null ? candid_none() : candid_some(value);
-}
-function to_candid_record_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    result: TestResult;
-    testType: TestType;
-    collectionDate: string;
-    labName: string;
+function to_candid_record_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    proposed_top_up_amount?: bigint;
 }): {
-    result: _TestResult;
-    testType: _TestType;
-    collectionDate: string;
-    labName: string;
+    proposed_top_up_amount: [] | [bigint];
 } {
     return {
-        result: to_candid_TestResult_n5(_uploadFile, _downloadFile, value.result),
-        testType: to_candid_TestType_n7(_uploadFile, _downloadFile, value.testType),
-        collectionDate: value.collectionDate,
-        labName: value.labName
+        proposed_top_up_amount: value.proposed_top_up_amount ? candid_some(value.proposed_top_up_amount) : candid_none()
     };
 }
-function to_candid_variant_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): {
+function to_candid_variant_n27(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ArticleStatus): {
+    underReview: null;
+} | {
+    published: null;
+} | {
+    rejected: null;
+} {
+    return value == ArticleStatus.underReview ? {
+        underReview: null
+    } : value == ArticleStatus.published ? {
+        published: null
+    } : value == ArticleStatus.rejected ? {
+        rejected: null
+    } : value;
+}
+function to_candid_variant_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): {
     admin: null;
 } | {
     user: null;
@@ -737,105 +716,6 @@ function to_candid_variant_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8
         user: null
     } : value == UserRole.guest ? {
         guest: null
-    } : value;
-}
-function to_candid_variant_n37(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Disease): {
-    yellowFever: null;
-} | {
-    mpox: null;
-} | {
-    meningitis: null;
-} | {
-    marburg: null;
-} | {
-    ebola: null;
-} | {
-    covid19: null;
-} | {
-    lassaFever: null;
-} | {
-    cholera: null;
-} {
-    return value == Disease.yellowFever ? {
-        yellowFever: null
-    } : value == Disease.mpox ? {
-        mpox: null
-    } : value == Disease.meningitis ? {
-        meningitis: null
-    } : value == Disease.marburg ? {
-        marburg: null
-    } : value == Disease.ebola ? {
-        ebola: null
-    } : value == Disease.covid19 ? {
-        covid19: null
-    } : value == Disease.lassaFever ? {
-        lassaFever: null
-    } : value == Disease.cholera ? {
-        cholera: null
-    } : value;
-}
-function to_candid_variant_n46(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: CaseClassification): {
-    probable: null;
-} | {
-    suspected: null;
-} | {
-    confirmed: null;
-} {
-    return value == CaseClassification.probable ? {
-        probable: null
-    } : value == CaseClassification.suspected ? {
-        suspected: null
-    } : value == CaseClassification.confirmed ? {
-        confirmed: null
-    } : value;
-}
-function to_candid_variant_n48(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ClinicalOutcome): {
-    alive: null;
-} | {
-    dead: null;
-} | {
-    unknown: null;
-} {
-    return value == ClinicalOutcome.alive ? {
-        alive: null
-    } : value == ClinicalOutcome.dead ? {
-        dead: null
-    } : value == ClinicalOutcome.unknown ? {
-        unknown_: null
-    } : value;
-}
-function to_candid_variant_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: TestResult): {
-    indeterminate: null;
-} | {
-    negative: null;
-} | {
-    positive: null;
-} {
-    return value == TestResult.indeterminate ? {
-        indeterminate: null
-    } : value == TestResult.negative ? {
-        negative: null
-    } : value == TestResult.positive ? {
-        positive: null
-    } : value;
-}
-function to_candid_variant_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: TestType): {
-    pcr: null;
-} | {
-    rdt: null;
-} | {
-    culture: null;
-} | {
-    elisa: null;
-} {
-    return value == TestType.pcr ? {
-        pcr: null
-    } : value == TestType.rdt ? {
-        rdt: null
-    } : value == TestType.culture ? {
-        culture: null
-    } : value == TestType.elisa ? {
-        elisa: null
     } : value;
 }
 export interface CreateActorOptions {

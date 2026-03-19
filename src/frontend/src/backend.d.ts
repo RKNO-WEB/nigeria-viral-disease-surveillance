@@ -7,92 +7,52 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
+export class ExternalBlob {
+    getBytes(): Promise<Uint8Array<ArrayBuffer>>;
+    getDirectURL(): string;
+    static fromURL(url: string): ExternalBlob;
+    static fromBytes(blob: Uint8Array<ArrayBuffer>): ExternalBlob;
+    withUploadProgress(onProgress: (percentage: number) => void): ExternalBlob;
+}
 export type Time = bigint;
-export interface AnalyticsSummary {
-    weeklyCounts: Array<[string, bigint]>;
-    casesByDisease: Array<[Disease, bigint]>;
-    casesByOutcome: Array<[ClinicalOutcome, bigint]>;
-    casesByAgeGroup: Array<[string, bigint]>;
-    casesBySex: Array<[string, bigint]>;
-    casesByState: Array<[string, bigint]>;
+export interface ReviewerApplication {
+    institution: string;
+    name: string;
+    qualifications: string;
+    email: string;
+    expertise: Array<string>;
 }
-export interface PatientDemographics {
-    age: bigint;
-    lga: string;
-    sex: string;
-    state: string;
-}
-export interface LabResult {
-    result: TestResult;
-    testType: TestType;
-    collectionDate: string;
-    labName: string;
-}
-export interface CaseReport {
+export interface JournalArticle {
     id: bigint;
-    status: CaseStatus;
-    exposureHistory: string;
-    symptomsDate: string;
-    timestamp: Time;
-    disease: Disease;
-    labResult?: LabResult;
-    outcome: ClinicalOutcome;
-    reporter: Principal;
-    demographics: PatientDemographics;
-    classification: CaseClassification;
+    pdf: ExternalBlob;
+    status: ArticleStatus;
+    title: string;
+    featured: boolean;
+    authors: Array<string>;
+    publicationDate?: Time;
+    journalName: string;
+    abstract: string;
+    category: string;
 }
-export interface OutbreakAlert {
-    caseCount: bigint;
-    alertLevel: AlertLevel;
-    state: string;
-    disease: Disease;
-    weekStart: Time;
+export interface ManuscriptSubmission {
+    id: bigint;
+    status: ArticleStatus;
+    title: string;
+    authors: Array<string>;
+    contactEmail: string;
+    abstract: string;
+    category: string;
+    manuscriptFile: ExternalBlob;
 }
 export interface UserProfile {
     name: string;
     role: string;
     organization: string;
 }
-export enum AlertLevel {
-    warning = "warning",
-    emergency = "emergency",
-    watch = "watch"
-}
-export enum CaseClassification {
-    probable = "probable",
-    suspected = "suspected",
-    confirmed = "confirmed"
-}
-export enum CaseStatus {
-    pending = "pending",
-    approved = "approved",
+export enum ArticleStatus {
+    underReview = "underReview",
+    published = "published",
     rejected = "rejected"
-}
-export enum ClinicalOutcome {
-    alive = "alive",
-    dead = "dead",
-    unknown_ = "unknown"
-}
-export enum Disease {
-    yellowFever = "yellowFever",
-    mpox = "mpox",
-    meningitis = "meningitis",
-    marburg = "marburg",
-    ebola = "ebola",
-    covid19 = "covid19",
-    lassaFever = "lassaFever",
-    cholera = "cholera"
-}
-export enum TestResult {
-    indeterminate = "indeterminate",
-    negative = "negative",
-    positive = "positive"
-}
-export enum TestType {
-    pcr = "pcr",
-    rdt = "rdt",
-    culture = "culture",
-    elisa = "elisa"
 }
 export enum UserRole {
     admin = "admin",
@@ -100,19 +60,22 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
-    approveReport(reportId: bigint): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    attachLabResult(reportId: bigint, labResult: LabResult): Promise<void>;
-    getAnalyticsSummary(): Promise<AnalyticsSummary>;
+    getArticleById(id: bigint): Promise<JournalArticle | null>;
+    getArticles(): Promise<Array<JournalArticle>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
-    getCaseById(id: bigint): Promise<CaseReport>;
-    getCaseReports(filterDisease: Disease | null, filterState: string | null): Promise<Array<CaseReport>>;
-    getOutbreakAlerts(): Promise<Array<OutbreakAlert>>;
+    getFeaturedArticles(): Promise<Array<JournalArticle>>;
+    getLatestArticles(limit: bigint): Promise<Array<JournalArticle>>;
+    getPaperStatus(paperId: bigint): Promise<ArticleStatus | null>;
+    getReviewerApplications(): Promise<Array<ReviewerApplication>>;
+    getSubmissions(): Promise<Array<ManuscriptSubmission>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
-    rejectReport(reportId: bigint): Promise<void>;
+    publishArticle(submissionId: bigint, journalName: string, publicationDate: Time, featured: boolean): Promise<bigint>;
+    registerReviewer(name: string, email: string, institution: string, qualifications: string, expertise: Array<string>): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
-    submitCaseReport(demographics: PatientDemographics, disease: Disease, classification: CaseClassification, symptomsDate: string, exposureHistory: string, outcome: ClinicalOutcome): Promise<bigint>;
-    updateCaseReport(id: bigint, demographics: PatientDemographics, disease: Disease, classification: CaseClassification, symptomsDate: string, exposureHistory: string, outcome: ClinicalOutcome): Promise<void>;
+    setFeatured(articleId: bigint, featured: boolean): Promise<void>;
+    submitManuscript(title: string, abstract: string, authors: Array<string>, category: string, contactEmail: string, pdf: ExternalBlob): Promise<bigint>;
+    updatePaperStatus(paperId: bigint, status: ArticleStatus): Promise<void>;
 }
